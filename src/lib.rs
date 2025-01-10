@@ -50,7 +50,7 @@ pub struct Settings {
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 struct State {
-    pub prev_duration_ms: u64,
+    pub duration_ms: u64,
     pub sequence: u64,
     pub logical_volume: u64,
     pub prev_logical_volume: u64,
@@ -76,7 +76,7 @@ impl Snowprint {
         Ok(Snowprint {
             settings: settings,
             state: State {
-                prev_duration_ms: duration_ms,
+                duration_ms: duration_ms,
                 sequence: 0,
                 logical_volume: 0,
                 prev_logical_volume: 0,
@@ -87,7 +87,7 @@ impl Snowprint {
     pub fn compose(&mut self) -> Result<u64, Error> {
         let duration_ms = get_most_recent_duration_ms(
             self.settings.origin_system_time,
-            self.state.prev_duration_ms,
+            self.state.duration_ms,
         );
         compose_from_settings_and_state(&self.settings, &mut self.state, duration_ms)
     }
@@ -104,18 +104,18 @@ fn check_settings(settings: &Settings) -> Result<(), Error> {
     Ok(())
 }
 
-fn get_most_recent_duration_ms(origin_system_time: SystemTime, prev_duration_ms: u64) -> u64 {
+fn get_most_recent_duration_ms(origin_system_time: SystemTime, duration_ms: u64) -> u64 {
     match SystemTime::now().duration_since(origin_system_time) {
         // check time didn't go backward
         Ok(duration) => {
             let dur_ms = duration.as_millis() as u64;
-            match prev_duration_ms < dur_ms {
+            match duration_ms < dur_ms {
                 true => dur_ms,
-                _ => prev_duration_ms,
+                _ => duration_ms,
             }
         }
         // yikes! time went backwards so use the most recent step
-        _ => prev_duration_ms,
+        _ => duration_ms,
     }
 }
 
@@ -124,7 +124,7 @@ fn compose_from_settings_and_state(
     state: &mut State,
     duration_ms: u64,
 ) -> Result<u64, Error> {
-    match state.prev_duration_ms < duration_ms {
+    match state.duration_ms < duration_ms {
         true => modify_state_time_changed(state, settings.logical_volume_length, duration_ms),
         _ => {
             if let Err(err) =
@@ -143,7 +143,7 @@ fn compose_from_settings_and_state(
 }
 
 fn modify_state_time_changed(state: &mut State, logical_volume_length: u64, duration_ms: u64) {
-    state.prev_duration_ms = duration_ms;
+    state.duration_ms = duration_ms;
     state.sequence = 0;
     state.prev_logical_volume = state.logical_volume;
     state.logical_volume += 1;
