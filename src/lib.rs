@@ -99,18 +99,14 @@ fn check_settings(settings: &Settings) -> Result<(), Error> {
 }
 
 fn get_most_recent_duration_ms(origin_system_time: SystemTime, duration_ms: u64) -> u64 {
-    match SystemTime::now().duration_since(origin_system_time) {
-        // check time didn't go backward
-        Ok(duration) => {
-            let dur_ms = duration.as_millis() as u64;
-            match duration_ms < dur_ms {
-                true => dur_ms,
-                _ => duration_ms,
-            }
+    if let Ok(duration) = SystemTime::now().duration_since(origin_system_time) {
+        let dur_ms = duration.as_millis() as u64;
+        if duration_ms < dur_ms {
+            return dur_ms;
         }
-        // yikes! time went backwards so use the most recent step
-        _ => duration_ms,
     }
+
+    duration_ms
 }
 
 fn compose_from_settings_and_state(
@@ -153,13 +149,12 @@ fn modify_state_time_did_not_change(
     }
 
     state.sequence = 0;
-
     let next_logical_volume = (state.logical_volume + 1) % logical_volume_length;
-    if state.prev_logical_volume == next_logical_volume {
-        // cycled through all sequences on all available logical shards
-        return Err(Error::ExceededAvailableSequences);
+    if state.prev_logical_volume != next_logical_volume {
+        state.logical_volume = next_logical_volume;
+        return Ok(());
     }
 
-    state.logical_volume = next_logical_volume;
-    Ok(())
+    // cycled through all sequences on all available logical shards
+    Err(Error::ExceededAvailableSequences)
 }
