@@ -39,13 +39,13 @@ fn test_get_most_recent_duration_ms() {
 #[test]
 fn test_modify_state_time_changed() {
     let mut state = State {
-        prev_duration_ms: 0,
+        duration_ms: 0,
         sequence: 82,
         logical_volume: 0,
         prev_logical_volume: 0,
     };
     let expected_state = State {
-        prev_duration_ms: 5,
+        duration_ms: 5,
         sequence: 0,
         logical_volume: 1,
         prev_logical_volume: 0,
@@ -54,7 +54,7 @@ fn test_modify_state_time_changed() {
     assert_eq!(expected_state, state);
 
     let expected_state = State {
-        prev_duration_ms: 6,
+        duration_ms: 6,
         sequence: 0,
         logical_volume: 2,
         prev_logical_volume: 1,
@@ -67,7 +67,7 @@ fn test_modify_state_time_changed() {
 fn test_modify_state_time_did_not_change() {
     // sequence
     let mut state = State {
-        prev_duration_ms: 0,
+        duration_ms: 0,
         sequence: 0,
         logical_volume: 0,
         prev_logical_volume: 0,
@@ -76,7 +76,7 @@ fn test_modify_state_time_did_not_change() {
     assert_eq!(Ok(()), result);
 
     let expected_state = State {
-        prev_duration_ms: 0,
+        duration_ms: 0,
         sequence: 1,
         logical_volume: 0,
         prev_logical_volume: 0,
@@ -85,7 +85,7 @@ fn test_modify_state_time_did_not_change() {
 
     // rollover
     let mut state = State {
-        prev_duration_ms: 0,
+        duration_ms: 0,
         sequence: 1023,
         logical_volume: 8191,
         prev_logical_volume: 8191,
@@ -94,7 +94,7 @@ fn test_modify_state_time_did_not_change() {
     assert_eq!(Ok(()), result);
 
     let expected_state = State {
-        prev_duration_ms: 0,
+        duration_ms: 0,
         sequence: 0,
         logical_volume: 0,
         prev_logical_volume: 8191,
@@ -103,7 +103,7 @@ fn test_modify_state_time_did_not_change() {
 
     // fail
     let mut state = State {
-        prev_duration_ms: 0,
+        duration_ms: 0,
         sequence: 1023,
         logical_volume: 8191,
         prev_logical_volume: 0,
@@ -121,7 +121,7 @@ fn test_compose_from_settings_and_state() {
         logical_volume_length: 4096,
     };
     let mut state = State {
-        prev_duration_ms: 0,
+        duration_ms: 0,
         sequence: 255,
         logical_volume: 2048,
         prev_logical_volume: 4096,
@@ -141,7 +141,7 @@ fn test_compose_from_settings_and_state() {
 
     // fail out
     let mut state = State {
-        prev_duration_ms: 0,
+        duration_ms: 0,
         sequence: 1023,
         logical_volume: 4095,
         prev_logical_volume: 0,
@@ -153,7 +153,7 @@ fn test_compose_from_settings_and_state() {
     // time changed
     let duration_ms = 1;
     let mut state = State {
-        prev_duration_ms: 0,
+        duration_ms: 0,
         sequence: 1023,
         logical_volume: 4095,
         prev_logical_volume: 0,
