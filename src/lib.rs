@@ -85,10 +85,8 @@ impl Snowprint {
     }
 
     pub fn compose(&mut self) -> Result<u64, Error> {
-        let duration_ms = get_most_recent_duration_ms(
-            self.settings.origin_system_time,
-            self.state.duration_ms,
-        );
+        let duration_ms =
+            get_most_recent_duration_ms(self.settings.origin_system_time, self.state.duration_ms);
         compose_from_settings_and_state(&self.settings, &mut self.state, duration_ms)
     }
 }
@@ -146,12 +144,7 @@ fn modify_state_time_changed(state: &mut State, logical_volume_length: u64, dura
     state.duration_ms = duration_ms;
     state.sequence = 0;
     state.prev_logical_volume = state.logical_volume;
-    state.logical_volume += 1;
-    if state.logical_volume < logical_volume_length {
-        return;
-    };
-
-    state.logical_volume = 0;
+    state.logical_volume = (state.logical_volume + 1) % logical_volume_length;
 }
 
 fn modify_state_time_did_not_change(
@@ -163,17 +156,14 @@ fn modify_state_time_did_not_change(
         return Ok(());
     }
 
-    let mut next_logical_volume = state.logical_volume + 1;
-    if next_logical_volume > logical_volume_length - 1 {
-        next_logical_volume = 0;
-    };
-    // cycled through all sequences on all available logical shards
+    state.sequence = 0;
+
+    let next_logical_volume = (state.logical_volume + 1) % logical_volume_length;
     if state.prev_logical_volume == next_logical_volume {
+        // cycled through all sequences on all available logical shards
         return Err(Error::ExceededAvailableSequences);
     }
 
-    // move to next shard
-    state.sequence = 0;
     state.logical_volume = next_logical_volume;
     Ok(())
 }
