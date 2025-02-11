@@ -6,40 +6,41 @@
 // This assumes sequences + logical volume ids occur in the same ms
 // https://instagram-engineering.com/sharding-ids-at-instagram-1cf5a71e5a5c
 
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-const SEQUENCE_BIT_LEN: u64 = 10;
-const SEQUENCE_BIT_MASK: u64 = (1 << SEQUENCE_BIT_LEN) - 1;
-const MAX_SEQUENCES: u64 = u32::pow(2, SEQUENCE_BIT_LEN as u32) as u64;
 const LOGICAL_VOLUME_BIT_LEN: u64 = 13;
 const LOGICAL_VOLUME_BIT_MASK: u64 = ((1 << LOGICAL_VOLUME_BIT_LEN) - 1) << SEQUENCE_BIT_LEN;
 const MAX_LOGICAL_VOLUMES: u64 = u32::pow(2, LOGICAL_VOLUME_BIT_LEN as u32) as u64;
+const MAX_SEQUENCES: u64 = u32::pow(2, SEQUENCE_BIT_LEN as u32) as u64;
+const SEQUENCE_BIT_LEN: u64 = 10;
+const SEQUENCE_BIT_MASK: u64 = (1 << SEQUENCE_BIT_LEN) - 1;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Error {
-    LogicalVolumeModuloIsZero,
     ExceededAvailableLogicalVolumes,
-    FailedToParseOriginSystemTime,
     ExceededAvailableSequences,
+    FailedToParseOriginSystemTime,
+    LogicalVolumeModuloIsZero,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Settings {
-    pub origin_system_time: SystemTime,
     pub logical_volume_base: u64,
     pub logical_volume_length: u64,
+    pub origin_time_ms: u64,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 struct State {
     pub duration_ms: u64,
-    pub sequence: u64,
     pub logical_volume: u64,
     pub prev_logical_volume: u64,
+    pub sequence: u64,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Snowprint {
+    origin_time_duration: SystemTime,
     settings: Settings,
     state: State,
 }
@@ -64,13 +65,16 @@ impl Snowprint {
             return Err(err);
         }
 
-        let duration_ms = match SystemTime::now().duration_since(settings.origin_system_time) {
+        let origin_time_duration = UNIX_EPOCH + Duration::from_millis(settings.origin_time_ms);
+
+        let duration_ms = match SystemTime::now().duration_since(origin_time_duration) {
             Ok(duration) => duration.as_millis() as u64,
             _ => return Err(Error::FailedToParseOriginSystemTime),
         };
 
         Ok(Snowprint {
             settings: settings,
+            origin_time_duration: origin_time_duration,
             state: State {
                 duration_ms: duration_ms,
                 sequence: 0,
@@ -82,7 +86,7 @@ impl Snowprint {
 
     pub fn compose(&mut self) -> Result<u64, Error> {
         let duration_ms =
-            get_most_recent_duration_ms(self.settings.origin_system_time, self.state.duration_ms);
+            get_most_recent_duration_ms(self.origin_time_duration, self.state.duration_ms);
         compose_from_settings_and_state(&self.settings, &mut self.state, duration_ms)
     }
 }
@@ -98,8 +102,8 @@ fn check_settings(settings: &Settings) -> Result<(), Error> {
     Ok(())
 }
 
-fn get_most_recent_duration_ms(origin_system_time: SystemTime, duration_ms: u64) -> u64 {
-    if let Ok(duration) = SystemTime::now().duration_since(origin_system_time) {
+fn get_most_recent_duration_ms(origin_time_duration: SystemTime, duration_ms: u64) -> u64 {
+    if let Ok(duration) = SystemTime::now().duration_since(origin_time_duration) {
         let dur_ms = duration.as_millis() as u64;
         if duration_ms < dur_ms {
             return dur_ms;
@@ -114,7 +118,7 @@ fn compose_from_settings_and_state(
     state: &mut State,
     duration_ms: u64,
 ) -> Result<u64, Error> {
-    match state.duration_ms < duration_ms {
+    match duration_ms > state.duration_ms {
         true => modify_state_time_changed(state, settings.logical_volume_length, duration_ms),
         _ => {
             if let Err(err) =

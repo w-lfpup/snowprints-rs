@@ -2,7 +2,6 @@ use snowprints::{compose, decompose, Error, Settings, Snowprint};
 use std::time::{Duration, UNIX_EPOCH};
 
 const JANUARY_1ST_2024_AS_MS: u64 = 1704096000000;
-const JANUARY_1ST_2024_AS_DURATION: Duration = Duration::from_millis(JANUARY_1ST_2024_AS_MS);
 
 #[test]
 fn compose_and_decompose() {
@@ -34,7 +33,7 @@ fn compose_and_decompose_from_a_real_date() {
 #[test]
 fn snowprint_struct_builds_and_returns_snowprint() {
     let settings = Settings {
-        origin_system_time: UNIX_EPOCH + JANUARY_1ST_2024_AS_DURATION,
+        origin_time_ms: JANUARY_1ST_2024_AS_MS,
         logical_volume_base: 0,
         logical_volume_length: 8192,
     };

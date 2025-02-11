@@ -4,7 +4,7 @@ use std::time::{Duration, SystemTime};
 #[test]
 fn test_check_failed_settings() {
     let mod_fail_settings = Settings {
-        origin_system_time: SystemTime::now(),
+        origin_time_ms: SystemTime::now().as_millis() as u64,
         logical_volume_base: 4096,
         logical_volume_length: 0,
     };
@@ -12,7 +12,7 @@ fn test_check_failed_settings() {
     assert_eq!(snowprinter, Err(Error::LogicalVolumeModuloIsZero));
 
     let exceed_fail_settings = Settings {
-        origin_system_time: SystemTime::now(),
+        origin_time_ms: SystemTime::now().as_millis() as u64,
         logical_volume_base: 4096,
         logical_volume_length: 8192,
     };
@@ -22,7 +22,7 @@ fn test_check_failed_settings() {
 
 #[test]
 fn test_get_most_recent_duration_ms() {
-    let duration = SystemTime::now();
+    let duration = SystemTime::now().as_millis() as u64;
 
     let duration_ms = get_most_recent_duration_ms(duration, 0);
     assert_eq!(duration_ms, 0);
@@ -116,7 +116,7 @@ fn test_modify_state_time_did_not_change() {
 fn test_compose_from_settings_and_state() {
     // time did not change
     let settings = Settings {
-        origin_system_time: SystemTime::now(),
+        origin_time_ms: SystemTime::now().as_millis() as u64,
         logical_volume_base: 4096,
         logical_volume_length: 4096,
     };
