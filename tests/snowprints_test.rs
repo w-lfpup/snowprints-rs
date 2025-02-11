@@ -1,5 +1,4 @@
 use snowprints::{compose, decompose, Error, Settings, Snowprints};
-use std::time::{Duration, UNIX_EPOCH};
 
 const JANUARY_1ST_2024_AS_MS: u64 = 1704096000000;
 
