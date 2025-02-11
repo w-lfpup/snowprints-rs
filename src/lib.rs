@@ -39,7 +39,7 @@ struct State {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct Snowprint {
+pub struct Snowprints {
     origin_time_duration: SystemTime,
     settings: Settings,
     state: State,
@@ -59,8 +59,8 @@ pub fn decompose(snowprint: u64) -> (u64, u64, u64) {
     (time, logical_volume, ticket_id)
 }
 
-impl Snowprint {
-    pub fn new(settings: Settings) -> Result<Snowprint, Error> {
+impl Snowprints {
+    pub fn new(settings: Settings) -> Result<Snowprints, Error> {
         if let Err(err) = check_settings(&settings) {
             return Err(err);
         }
@@ -72,7 +72,7 @@ impl Snowprint {
             _ => return Err(Error::FailedToParseOriginSystemTime),
         };
 
-        Ok(Snowprint {
+        Ok(Snowprints {
             settings: settings,
             origin_time_duration: origin_time_duration,
             state: State {

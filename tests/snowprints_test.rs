@@ -1,4 +1,4 @@
-use snowprints::{compose, decompose, Error, Settings, Snowprint};
+use snowprints::{compose, decompose, Error, Settings, Snowprints};
 use std::time::{Duration, UNIX_EPOCH};
 
 const JANUARY_1ST_2024_AS_MS: u64 = 1704096000000;
@@ -38,7 +38,7 @@ fn snowprint_struct_builds_and_returns_snowprint() {
         logical_volume_length: 8192,
     };
 
-    let mut builder = match Snowprint::new(settings) {
+    let mut builder = match Snowprints::new(settings) {
         Ok(snow) => snow,
         // error by comparing result to incorrect error
         Err(err) => return assert_eq!(Error::ExceededAvailableSequences, err),
