@@ -4,7 +4,7 @@ Create unique and sortable ids.
 
 ## What is a snowprint?
 
-A snowprint unique id generation pattern defined by bitshifting the following values into a 64bit unsigned integer:
+A snowprint is unique id defined by bitshifting the following values into a 64bit unsigned integer:
 - 41 bit `duration` since an arbitrary date in millseconds
 - 13 bit `logical_volume` between `0-8191`
 - 10 bit `sequence` between `0-1023`.
@@ -12,26 +12,6 @@ A snowprint unique id generation pattern defined by bitshifting the following va
 `snowprint` is based rougly on this [article](https://instagram-engineering.com/sharding-ids-at-instagram-1cf5a71e5a5c).
 
 ## How to use
-
-To create a `snowprint` use the `compose` function.
-
-```rust
-use snowprints::compose;
-
-let snowprint = compose(duration_ms, logical_volume, sequence);
-```
-
-To get values from a `snowprint` use the `decompose` function.
-
-```rust
-use snowprints::decompose;
-
-let (timestamp_ms, logical_volume, sequence) = decompose(snowprint);
-```
-
-## Snowprint generation
-
-For a predefined way to cycle through a series of `logical_volumes` and `sequences` use `Snowprints`.
 
 ### Settings
 
@@ -70,6 +50,16 @@ let snowprint = match snowprinter.compose() {
 ```
 
 The function `snowprinter.compose()` will only error when available `logical_volumes` and `sequences` have been exhausted for the current millisecond.
+
+### Decompose snonwprints
+
+To get values from a `snowprint` use the `decompose` function.
+
+```rust
+use snowprints::decompose;
+
+let (timestamp_ms, logical_volume, sequence) = decompose(snowprint);
+```
 
 ## Why can't I choose my own bit lengths?
 
