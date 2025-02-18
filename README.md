@@ -2,15 +2,6 @@
 
 Create unique and sortable ids.
 
-## What is a snowprint?
-
-A snowprint is unique id defined by bitshifting the following values into a 64bit unsigned integer:
-- 41 bit `duration` since an arbitrary date in millseconds
-- 13 bit `logical_volume` between `0-8191`
-- 10 bit `sequence` between `0-1023`.
-
-`snowprint` is based rougly on this [article](https://instagram-engineering.com/sharding-ids-at-instagram-1cf5a71e5a5c).
-
 ## How to use
 
 ### Settings
@@ -24,16 +15,18 @@ To rotate through logical volumes `1024-2047`, set `logical_volume_base` to `102
 ```rust
 use snowprints::Settings;
 
+const JANUARY_1ST_2024_AS_MS: u64 = 1704096000000;
+
 let settings = Settings {
-    origin_time_ms: EPOCH_2024_01_01_AS_MS,
+    origin_time_ms: JANUARY_1ST_2024_AS_MS,
     logical_volume_base: 0,
     logical_volume_length: 8192,
 };
 ```
 
-### Compose snowprints
+### Compose
 
-In the example below, a `Snowprint` called `snowprinter` will track milliseconds since `2024 Jan 1st` and rotate through logical volumes `0-8191`.
+In the example below, `Snowprints` start on `2024 Jan 1st` and rotate through logical volumes `0-8191`.
 
 ```rust
 use snowprints::Snowprints;
@@ -45,13 +38,13 @@ let mut snowprinter = match Snowprints::new(settings) {
 
 let snowprint = match snowprinter.compose() {
     Ok(sp) => sp,
-    _ => return println!("Consumed all available logical volumes and sequences!"),
+    _ => return println!("Exhausted all available logical volumes and sequences for the current millisecond!"),
 };
 ```
 
-The function `snowprinter.compose()` will only error when available `logical_volumes` and `sequences` have been exhausted for the current millisecond.
+The function `snowprinter.compose()` will only error when available `logical_volumes` and `sequences` have been exhausted for the current millisecond. 
 
-### Decompose snonwprints
+### Decompose
 
 To get values from a `snowprint` use the `decompose` function.
 
@@ -61,20 +54,23 @@ use snowprints::decompose;
 let (timestamp_ms, logical_volume, sequence) = decompose(snowprint);
 ```
 
+## What is a snowprint?
+
+A `snowprint` is a [snowflake id](https://en.wikipedia.org/wiki/Snowflake_ID) rougly based on this [article](https://instagram-engineering.com/sharding-ids-at-instagram-1cf5a71e5a5c).
+
+I called them snowprints because they leave a "sequential trail" of snowflake IDs across a range of logical volumes.
+
+A snowprint is unique id defined by bitshifting the following values into a 64bit unsigned integer:
+- 41 bit `duration` since an arbitrary date in millseconds
+- 13 bit `logical_volume` between `0-8191`
+- 10 bit `sequence` between `0-1023`.
+
 ## Why can't I choose my own bit lengths?
 
-A `snowprint` is a unique identifier meant to last up to `69 years`. The ids will most likely outlive the code, organization, or even the author that generated them.
+A `snowflake id` is a unique identifier with a 69 year lifespan. They will most likely outlive any system, organization, or author that generated them.
 
-If bit lengths are available as an API, a developer will inevitably change them and cause immense and incalculable pain for whatever unlucky system in that 41 year time period.
-
-If a custom set of bit lengths are neccessary, fork this repo and change the following values:
-
-```rust
-// ./src/lib.rs
-const SEQUENCE_BIT_LEN: u64 = 10;
-const LOGICAL_VOLUME_BIT_LEN: u64 = 13;
-```
+If bit lengths were available as an API, developers could cause immense pain ($$$).
 
 ## License
 
-`Snowprints` is released under the BSD 3-Clause License
+`Snowprints` is released under the BSD 3-Clause License.
