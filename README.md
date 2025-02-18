@@ -1,4 +1,4 @@
-# snowprints-rs
+# Snowprints-rs
 
 Create unique and sortable ids.
 
@@ -6,15 +6,14 @@ Create unique and sortable ids.
 
 ### Settings
 
-First, define a `Settings` struct.
+Define a `Settings` struct.
 
 The `logical_volume_base` property defines where to begin logical volume rotations. The `logical_volume_length` property defines how many logical volumes will be rotated.
-
-To rotate through logical volumes `1024-2047`, set `logical_volume_base` to `1024` and `logical_volume_length` to `1024`.
 
 ```rust
 use snowprints::Settings;
 
+// THIS VALUE CANNOT BE CHANGED FOR THE ENTIRE SOFTWARE / SYSTEM LIFETIME
 const JANUARY_1ST_2024_AS_MS: u64 = 1704096000000;
 
 let settings = Settings {
@@ -42,8 +41,6 @@ let snowprint = match snowprinter.compose() {
 };
 ```
 
-The function `snowprinter.compose()` will only error when available `logical_volumes` and `sequences` have been exhausted for the current millisecond. 
-
 ### Decompose
 
 To get values from a `snowprint` use the `decompose` function.
@@ -56,20 +53,9 @@ let (timestamp_ms, logical_volume, sequence) = decompose(snowprint);
 
 ## What is a snowprint?
 
-A `snowprint` is a [snowflake id](https://en.wikipedia.org/wiki/Snowflake_ID) rougly based on this [article](https://instagram-engineering.com/sharding-ids-at-instagram-1cf5a71e5a5c).
+A `snowprint` is a [snowflake id](https://en.wikipedia.org/wiki/Snowflake_ID) variant based on this [article](https://instagram-engineering.com/sharding-ids-at-instagram-1cf5a71e5a5c).
 
-I called them snowprints because they leave a "sequential trail" of snowflake IDs across a range of logical volumes.
-
-A snowprint is unique id defined by bitshifting the following values into a 64bit unsigned integer:
-- 41 bit `duration` since an arbitrary date in millseconds
-- 13 bit `logical_volume` between `0-8191`
-- 10 bit `sequence` between `0-1023`.
-
-## Why can't I choose my own bit lengths?
-
-A `snowflake id` is a unique identifier with a 69 year lifespan. They will most likely outlive any system, organization, or author that generated them.
-
-If bit lengths were available as an API, developers could cause immense pain ($$$).
+I called them snowprints because this library creates a "sequential trail" of snowflake IDs across all available logical volumes.
 
 ## License
 
