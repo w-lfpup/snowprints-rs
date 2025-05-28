@@ -3,16 +3,16 @@
 //     - increase logical volume sequence by 1 every MS
 //     - return err if available logical volume ids have been used
 
-// This assumes sequences + logical volume ids occur in the same ms
+// This assumes sequences + logical volume ids occur in the same millisecond
 // https://instagram-engineering.com/sharding-ids-at-instagram-1cf5a71e5a5c
 
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 const LOGICAL_VOLUME_BIT_LEN: u64 = 13;
+const SEQUENCE_BIT_LEN: u64 = 10;
 const LOGICAL_VOLUME_BIT_MASK: u64 = ((1 << LOGICAL_VOLUME_BIT_LEN) - 1) << SEQUENCE_BIT_LEN;
 const MAX_LOGICAL_VOLUMES: u64 = u32::pow(2, LOGICAL_VOLUME_BIT_LEN as u32) as u64;
 const MAX_SEQUENCES: u64 = u32::pow(2, SEQUENCE_BIT_LEN as u32) as u64;
-const SEQUENCE_BIT_LEN: u64 = 10;
 const SEQUENCE_BIT_MASK: u64 = (1 << SEQUENCE_BIT_LEN) - 1;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -45,20 +45,6 @@ pub struct Snowprints {
     state: State,
 }
 
-pub fn compose(ms_timestamp: u64, logical_volume: u64, ticket_id: u64) -> u64 {
-    ms_timestamp << (LOGICAL_VOLUME_BIT_LEN + SEQUENCE_BIT_LEN)
-        | logical_volume << SEQUENCE_BIT_LEN
-        | ticket_id
-}
-
-pub fn decompose(snowprint: u64) -> (u64, u64, u64) {
-    let time = snowprint >> (LOGICAL_VOLUME_BIT_LEN + SEQUENCE_BIT_LEN);
-    let logical_volume = (snowprint & LOGICAL_VOLUME_BIT_MASK) >> SEQUENCE_BIT_LEN;
-    let ticket_id = snowprint & SEQUENCE_BIT_MASK;
-
-    (time, logical_volume, ticket_id)
-}
-
 impl Snowprints {
     pub fn new(settings: Settings) -> Result<Snowprints, Error> {
         if let Err(err) = check_settings(&settings) {
@@ -88,6 +74,17 @@ impl Snowprints {
         let duration_ms =
             get_most_recent_duration_ms(self.origin_time_duration, self.state.duration_ms);
         compose_from_settings_and_state(&self.settings, &mut self.state, duration_ms)
+    }
+
+    pub fn get_timestamp(&self) -> u64 {
+        // get current timestamp
+        get_most_recent_duration_ms(self.origin_time_duration, self.state.duration_ms)
+    }
+
+    pub fn get_bit_shifted_timedstamp(&self) -> u64 {
+        let duration_ms =
+            get_most_recent_duration_ms(self.origin_time_duration, self.state.duration_ms);
+        compose(duration_ms, 0, 0)
     }
 }
 
@@ -161,4 +158,18 @@ fn modify_state_time_did_not_change(
 
     // cycled through all sequences on all available logical shards
     Err(Error::ExceededAvailableSequences)
+}
+
+pub fn compose(ms_timestamp: u64, logical_volume: u64, ticket_id: u64) -> u64 {
+    ms_timestamp << (LOGICAL_VOLUME_BIT_LEN + SEQUENCE_BIT_LEN)
+        | logical_volume << SEQUENCE_BIT_LEN
+        | ticket_id
+}
+
+pub fn decompose(snowprint: u64) -> (u64, u64, u64) {
+    let time = snowprint >> (LOGICAL_VOLUME_BIT_LEN + SEQUENCE_BIT_LEN);
+    let logical_volume = (snowprint & LOGICAL_VOLUME_BIT_MASK) >> SEQUENCE_BIT_LEN;
+    let ticket_id = snowprint & SEQUENCE_BIT_MASK;
+
+    (time, logical_volume, ticket_id)
 }
