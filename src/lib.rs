@@ -81,9 +81,15 @@ impl Snowprints {
         get_most_recent_duration_ms(self.origin_time_duration, self.state.duration_ms)
     }
 
-    pub fn get_bit_shifted_timedstamp(&self) -> u64 {
-        let duration_ms =
+    pub fn get_bit_shifted_timestamp(&self, offset_ms: u64) -> u64 {
+        let mut duration_ms =
             get_most_recent_duration_ms(self.origin_time_duration, self.state.duration_ms);
+
+        match offset_ms < duration_ms {
+            true => duration_ms -= offset_ms,
+            _ => duration_ms = 0,
+        }
+
         compose(duration_ms, 0, 0)
     }
 }
