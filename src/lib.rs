@@ -9,10 +9,10 @@
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 const LOGICAL_VOLUME_BIT_LEN: u64 = 13;
+const SEQUENCE_BIT_LEN: u64 = 10;
 const LOGICAL_VOLUME_BIT_MASK: u64 = ((1 << LOGICAL_VOLUME_BIT_LEN) - 1) << SEQUENCE_BIT_LEN;
 const MAX_LOGICAL_VOLUMES: u64 = u32::pow(2, LOGICAL_VOLUME_BIT_LEN as u32) as u64;
 const MAX_SEQUENCES: u64 = u32::pow(2, SEQUENCE_BIT_LEN as u32) as u64;
-const SEQUENCE_BIT_LEN: u64 = 10;
 const SEQUENCE_BIT_MASK: u64 = (1 << SEQUENCE_BIT_LEN) - 1;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
