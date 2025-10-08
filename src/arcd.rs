@@ -10,7 +10,6 @@ pub fn from_params(params: Params) -> Result<Arc<Mutex<Snowprints>>, Error> {
     Ok(Arc::new(Mutex::new(snowprints)))
 }
 
-// function to get connection and free mutex
 pub fn create_id(snowprints_acrd: &Arc<Mutex<Snowprints>>) -> Result<u64, String> {
     let mut snowprints = match snowprints_acrd.lock() {
         Ok(snowprints) => snowprints,
@@ -23,7 +22,6 @@ pub fn create_id(snowprints_acrd: &Arc<Mutex<Snowprints>>) -> Result<u64, String
     }
 }
 
-// function to get connection and free mutex
 pub fn get_timestamp(snowprints_acrd: &Arc<Mutex<Snowprints>>) -> Result<u64, String> {
     let snowprints = match snowprints_acrd.lock() {
         Ok(snowprints) => snowprints,
@@ -31,4 +29,16 @@ pub fn get_timestamp(snowprints_acrd: &Arc<Mutex<Snowprints>>) -> Result<u64, St
     };
 
     Ok(snowprints.get_timestamp())
+}
+
+pub fn get_bit_shifted_timestamp(
+    snowprints_acrd: &Arc<Mutex<Snowprints>>,
+    offset: u64,
+) -> Result<u64, String> {
+    let snowprints = match snowprints_acrd.lock() {
+        Ok(snowprints) => snowprints,
+        Err(e) => return Err(e.to_string()),
+    };
+
+    Ok(snowprints.get_bit_shifted_timestamp(offset))
 }
