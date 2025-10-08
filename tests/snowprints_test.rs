@@ -1,4 +1,4 @@
-use snowprints::{compose, decompose, Error, Settings, Snowprints};
+use snowprints::{compose, decompose, Error, Params, Snowprints};
 
 const JANUARY_1ST_2024_AS_MS: u64 = 1704096000000;
 
@@ -31,19 +31,19 @@ fn compose_and_decompose_from_a_real_date() {
 
 #[test]
 fn snowprint_struct_builds_and_returns_snowprint() {
-    let settings = Settings {
+    let params = Params {
         origin_time_ms: JANUARY_1ST_2024_AS_MS,
         logical_volume_base: 0,
         logical_volume_length: 8192,
     };
 
-    let mut builder = match Snowprints::new(settings) {
+    let mut snowprints = match Snowprints::from_params(params) {
         Ok(snow) => snow,
         // error by comparing result to incorrect error
         Err(err) => return assert_eq!(Error::ExceededAvailableSequences, err),
     };
 
-    let snowprint = builder.compose();
+    let snowprint = snowprints.create_id();
     match snowprint {
         Ok(sp) => {
             let (_timestamp, logical_volume, sequence) = decompose(sp);
