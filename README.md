@@ -11,12 +11,12 @@ Define a `Settings` struct.
 The `logical_volume_base` property defines where to begin logical volume rotations. The `logical_volume_length` property defines how many logical volumes will be rotated.
 
 ```rust
-use snowprints::Settings;
+use snowprints::Params;
 
 // THIS VALUE CANNOT BE CHANGED FOR THE ENTIRE SOFTWARE / SYSTEM LIFETIME
 const JANUARY_1ST_2024_AS_MS: u64 = 1704096000000;
 
-let settings = Settings {
+let params = Params {
     origin_time_ms: JANUARY_1ST_2024_AS_MS,
     logical_volume_base: 0,
     logical_volume_length: 8192,
@@ -30,9 +30,9 @@ In the example below, `Snowprints` start on `2024 Jan 1st` and rotate through lo
 ```rust
 use snowprints::Snowprints;
 
-let mut snowprinter = match Snowprints::new(settings) {
+let mut snowprinter = match Snowprints::new(params) {
     Ok(snow) => snow,
-    _ => return println!("Settings are not valid!"),
+    _ => return println!("Params are not valid!"),
 };
 
 let snowprint = match snowprinter.compose() {
@@ -55,7 +55,7 @@ let (timestamp_ms, logical_volume, sequence) = decompose(snowprint);
 
 A `snowprint` is a [snowflake id](https://en.wikipedia.org/wiki/Snowflake_ID) variant based on this [article](https://instagram-engineering.com/sharding-ids-at-instagram-1cf5a71e5a5c).
 
-I called them snowprints because this library creates a "sequential trail" of snowflake IDs across all available logical volumes.
+They're called snowprints because this library creates a "sequential trail" of snowflake IDs across all available logical volumes. This evenly distributes entries across a shardable real estate.
 
 ## License
 
