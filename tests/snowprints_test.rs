@@ -1,4 +1,4 @@
-use snowprints::{compose, decompose, Error, Params, Snowprints};
+use snowprints::{Errors, Params, Snowprints, compose, decompose};
 
 const JANUARY_1ST_2024_AS_MS: u64 = 1704096000000;
 
@@ -37,10 +37,10 @@ fn snowprint_struct_builds_and_returns_snowprint() {
         logical_volume_length: 8192,
     };
 
-    let mut snowprints = match Snowprints::from_params(params) {
+    let mut snowprints = match Snowprints::from(params) {
         Ok(snow) => snow,
         // error by comparing result to incorrect error
-        Err(err) => return assert_eq!(Error::ExceededAvailableSequences, err),
+        Err(err) => return assert_eq!(Errors::ExceededAvailableSequences, err),
     };
 
     let snowprint = snowprints.create_id();
@@ -52,6 +52,6 @@ fn snowprint_struct_builds_and_returns_snowprint() {
             assert_eq!(sequence, 1);
         }
         // error by comparing result to incorrect error
-        Err(err) => assert_eq!(Error::ExceededAvailableLogicalVolumes, err),
+        Err(err) => assert_eq!(Errors::ExceededAvailableLogicalVolumes, err),
     }
 }

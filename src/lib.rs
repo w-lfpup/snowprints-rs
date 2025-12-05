@@ -1,9 +1,9 @@
-// The point is to distribute ids across logical volume shards evenly
+// Distribute ids across logical volume shards evenly
 //     - reset sequence every MS to 0 to remain sortable
 //     - increase logical volume sequence by 1 every MS
 //     - return err if available logical volume ids have been used
 
-// This assumes sequences + logical volume ids occur in the same millisecond
+// The above assumes sequences + logical volume ids occur in the same millisecond
 // https://instagram-engineering.com/sharding-ids-at-instagram-1cf5a71e5a5c
 
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -16,7 +16,7 @@ const MAX_SEQUENCES: u64 = u32::pow(2, SEQUENCE_BIT_LEN as u32) as u64;
 const SEQUENCE_BIT_MASK: u64 = (1 << SEQUENCE_BIT_LEN) - 1;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub enum Error {
+pub enum Errors {
     ExceededAvailableLogicalVolumes,
     ExceededAvailableSequences,
     FailedToParseOriginSystemTime,
@@ -46,7 +46,7 @@ pub struct Snowprints {
 }
 
 impl Snowprints {
-    pub fn from_params(params: Params) -> Result<Snowprints, Error> {
+    pub fn from(params: Params) -> Result<Snowprints, Errors> {
         if let Err(err) = check_params(&params) {
             return Err(err);
         }
@@ -55,7 +55,7 @@ impl Snowprints {
 
         let duration_ms = match SystemTime::now().duration_since(origin_time_duration) {
             Ok(duration) => duration.as_millis() as u64,
-            _ => return Err(Error::FailedToParseOriginSystemTime),
+            _ => return Err(Errors::FailedToParseOriginSystemTime),
         };
 
         Ok(Snowprints {
@@ -70,14 +70,27 @@ impl Snowprints {
         })
     }
 
-    pub fn create_id(&mut self) -> Result<u64, Error> {
+    pub fn create_id(&mut self) -> Result<u64, Errors> {
         let duration_ms =
             get_most_recent_duration_ms(self.origin_time_duration, self.state.duration_ms);
-        compose_from_params_and_state(&self.params, &mut self.state, duration_ms)
+
+        match duration_ms > self.state.duration_ms {
+            true => tick_logical_volume(&mut self.state, &self.params, duration_ms),
+            _ => {
+                if let Err(err) = tick_sequence(&mut self.state, &self.params) {
+                    return Err(err);
+                };
+            }
+        }
+
+        Ok(compose(
+            duration_ms,
+            self.params.logical_volume_base + self.state.logical_volume,
+            self.state.sequence,
+        ))
     }
 
     pub fn get_timestamp(&self) -> u64 {
-        // get current timestamp
         get_most_recent_duration_ms(self.origin_time_duration, self.state.duration_ms)
     }
 
@@ -85,21 +98,21 @@ impl Snowprints {
         let mut duration_ms =
             get_most_recent_duration_ms(self.origin_time_duration, self.state.duration_ms);
 
-        match offset_ms < duration_ms {
-            true => duration_ms -= offset_ms,
-            _ => duration_ms = 0,
-        }
+        duration_ms = match offset_ms < duration_ms {
+            true => duration_ms - offset_ms,
+            _ => 0,
+        };
 
         compose(duration_ms, 0, 0)
     }
 }
 
-fn check_params(params: &Params) -> Result<(), Error> {
+fn check_params(params: &Params) -> Result<(), Errors> {
     if params.logical_volume_length == 0 {
-        return Err(Error::LogicalVolumeModuloIsZero);
+        return Err(Errors::LogicalVolumeModuloIsZero);
     }
     if MAX_LOGICAL_VOLUMES < (params.logical_volume_base + params.logical_volume_length) {
-        return Err(Error::ExceededAvailableLogicalVolumes);
+        return Err(Errors::ExceededAvailableLogicalVolumes);
     }
 
     Ok(())
@@ -116,53 +129,27 @@ fn get_most_recent_duration_ms(origin_time_duration: SystemTime, duration_ms: u6
     duration_ms
 }
 
-fn compose_from_params_and_state(
-    params: &Params,
-    state: &mut State,
-    duration_ms: u64,
-) -> Result<u64, Error> {
-    match duration_ms > state.duration_ms {
-        true => modify_state_time_changed(state, params.logical_volume_length, duration_ms),
-        _ => {
-            if let Err(err) = modify_state_time_did_not_change(state, params.logical_volume_length)
-            {
-                return Err(err);
-            };
-        }
-    }
-
-    Ok(compose(
-        duration_ms,
-        params.logical_volume_base + state.logical_volume,
-        state.sequence,
-    ))
-}
-
-fn modify_state_time_changed(state: &mut State, logical_volume_length: u64, duration_ms: u64) {
+fn tick_logical_volume(state: &mut State, params: &Params, duration_ms: u64) {
     state.duration_ms = duration_ms;
     state.sequence = 0;
     state.prev_logical_volume = state.logical_volume;
-    state.logical_volume = (state.logical_volume + 1) % logical_volume_length;
+    state.logical_volume = (state.logical_volume + 1) % params.logical_volume_length;
 }
 
-fn modify_state_time_did_not_change(
-    state: &mut State,
-    logical_volume_length: u64,
-) -> Result<(), Error> {
+fn tick_sequence(state: &mut State, params: &Params) -> Result<(), Errors> {
     state.sequence += 1;
     if state.sequence < MAX_SEQUENCES {
         return Ok(());
     }
 
     state.sequence = 0;
-    let next_logical_volume = (state.logical_volume + 1) % logical_volume_length;
+    let next_logical_volume = (state.logical_volume + 1) % params.logical_volume_length;
     if state.prev_logical_volume != next_logical_volume {
         state.logical_volume = next_logical_volume;
         return Ok(());
     }
 
-    // cycled through all sequences on all available logical shards
-    Err(Error::ExceededAvailableSequences)
+    Err(Errors::ExceededAvailableSequences)
 }
 
 pub fn compose(ms_timestamp: u64, logical_volume: u64, ticket_id: u64) -> u64 {

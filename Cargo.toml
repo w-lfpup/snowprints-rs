@@ -1,8 +1,13 @@
 [package]
 name = "snowprints"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
+
+categories = ["data-structures", "network-programming"]
+description = "Generate snowflake IDs across logical volumes"  
+keywords = ["UUID", "snowflake", "distributed", "systems", "64bit"]
+license = "BSD-3-Clause"
+readme = "README.md"
+repository = "https://github.com/w-lfpup/snowprints-rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]

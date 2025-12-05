@@ -1,12 +1,25 @@
 # Snowprints-rs
 
-Create unique and sortable ids.
+Create and distribute snowflake ids across logical volumes.
 
 ## How to use
 
-### Settings
+### Install
 
-Define a `Settings` struct.
+Snowprints-rs is available on [crates.io](https://crates.io/crates/snowprints/)
+
+```sh
+cargo add snowprints
+```
+
+Or install directly from github:
+```sh
+cargo add --git https://github.com/w-lfpup/snowprints-rs
+```
+
+### Params
+
+Define a `Params` struct.
 
 The `logical_volume_base` property defines where to begin logical volume rotations. The `logical_volume_length` property defines how many logical volumes will be rotated.
 
@@ -23,27 +36,35 @@ let params = Params {
 };
 ```
 
-### Compose
+### API
 
 In the example below, `Snowprints` start on `2024 Jan 1st` and rotate through logical volumes `0-8191`.
 
 ```rust
 use snowprints::Snowprints;
 
-let mut snowprinter = match Snowprints::new(params) {
+let mut snowprints = match Snowprints::from(params) {
     Ok(snow) => snow,
-    _ => return println!("Params are not valid!"),
+    Err(e) => return println!("{}", e),
 };
 
-let snowprint = match snowprinter.compose() {
+// create a unique id
+let snowflake_id = match snowprints.create_id() {
     Ok(sp) => sp,
-    _ => return println!("Exhausted all available logical volumes and sequences for the current millisecond!"),
+    Err(e) => return println!("{}", e),
 };
+
+// get the current timestamp
+let timestamp = snowprints.get_timestamp();
+
+// get a shifted timestamp for search index paginate DB entries
+let offset_ms = 5;
+let bit_shifted_timestamp = snowprints.get_bit_shifted_timestamp(offset_ms);
 ```
 
 ### Decompose
 
-To get values from a `snowprint` use the `decompose` function.
+To pull values from a `snowflake id` use the `decompose` function.
 
 ```rust
 use snowprints::decompose;
@@ -55,7 +76,7 @@ let (timestamp_ms, logical_volume, sequence) = decompose(snowprint);
 
 A `snowprint` is a [snowflake id](https://en.wikipedia.org/wiki/Snowflake_ID) variant based on this [article](https://instagram-engineering.com/sharding-ids-at-instagram-1cf5a71e5a5c).
 
-They're called snowprints because this library creates a "sequential trail" of snowflake IDs across all available logical volumes. This evenly distributes entries across a shardable real estate.
+This library optimistically distributes a "sequential trail" of snowflake IDs across shardable real estate.
 
 ## License
 
