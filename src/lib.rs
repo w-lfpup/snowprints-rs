@@ -3,7 +3,7 @@
 //     - increase logical volume sequence by 1 every MS
 //     - return err if available logical volume ids have been used
 
-// This assumes sequences + logical volume ids occur in the same millisecond
+// The above assumes sequences + logical volume ids occur in the same millisecond
 // https://instagram-engineering.com/sharding-ids-at-instagram-1cf5a71e5a5c
 
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
