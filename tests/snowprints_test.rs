@@ -1,4 +1,4 @@
-use snowprints::{compose, decompose, Error, Params, Snowprints};
+use snowprints::{Error, Params, Snowprints, compose, decompose};
 
 const JANUARY_1ST_2024_AS_MS: u64 = 1704096000000;
 
