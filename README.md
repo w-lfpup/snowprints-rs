@@ -4,6 +4,10 @@ Create unique and sortable ids.
 
 ## How to use
 
+### Install
+
+Snowprints-rs is available on [crates.io](https://crates.io/crates/snowprints/)
+
 ### Settings
 
 Define a `Settings` struct.
@@ -30,20 +34,30 @@ In the example below, `Snowprints` start on `2024 Jan 1st` and rotate through lo
 ```rust
 use snowprints::Snowprints;
 
-let mut snowprinter = match Snowprints::new(params) {
+let mut snowprints = match Snowprints::from(params) {
     Ok(snow) => snow,
-    _ => return println!("Params are not valid!"),
+    Err(e) => return println!("{}", e),
 };
 
-let snowprint = match snowprinter.compose() {
+let snowflake_id = match snowprints.create_id() {
     Ok(sp) => sp,
-    _ => return println!("Exhausted all available logical volumes and sequences for the current millisecond!"),
+    Err(e) => return println!("{}", e),
 };
+
+// get the current timestamp
+let timestamp = snowprints.get_timestamp();
+
+// get a left shifted timestamp;
+let offset_ms = 5;
+let bit_shifted_timestamp = snowprints.get_bit_shifted_timestamp(offset_ms);
+
+// decompose 
+let (timestamp_ms, logical_volume, sequence) = decompose(snowprint);
 ```
 
 ### Decompose
 
-To get values from a `snowprint` use the `decompose` function.
+To pul values from a `snowprint` use the `decompose` function.
 
 ```rust
 use snowprints::decompose;

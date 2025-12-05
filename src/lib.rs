@@ -16,7 +16,7 @@ const MAX_SEQUENCES: u64 = u32::pow(2, SEQUENCE_BIT_LEN as u32) as u64;
 const SEQUENCE_BIT_MASK: u64 = (1 << SEQUENCE_BIT_LEN) - 1;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub enum Error {
+pub enum Errors {
     ExceededAvailableLogicalVolumes,
     ExceededAvailableSequences,
     FailedToParseOriginSystemTime,
@@ -46,7 +46,7 @@ pub struct Snowprints {
 }
 
 impl Snowprints {
-    pub fn from_params(params: Params) -> Result<Snowprints, Error> {
+    pub fn from(params: Params) -> Result<Snowprints, Errors> {
         if let Err(err) = check_params(&params) {
             return Err(err);
         }
@@ -55,7 +55,7 @@ impl Snowprints {
 
         let duration_ms = match SystemTime::now().duration_since(origin_time_duration) {
             Ok(duration) => duration.as_millis() as u64,
-            _ => return Err(Error::FailedToParseOriginSystemTime),
+            _ => return Err(Errors::FailedToParseOriginSystemTime),
         };
 
         Ok(Snowprints {
@@ -70,7 +70,7 @@ impl Snowprints {
         })
     }
 
-    pub fn create_id(&mut self) -> Result<u64, Error> {
+    pub fn create_id(&mut self) -> Result<u64, Errors> {
         let duration_ms =
             get_most_recent_duration_ms(self.origin_time_duration, self.state.duration_ms);
         compose_from_params_and_state(&self.params, &mut self.state, duration_ms)
@@ -94,12 +94,12 @@ impl Snowprints {
     }
 }
 
-fn check_params(params: &Params) -> Result<(), Error> {
+fn check_params(params: &Params) -> Result<(), Errors> {
     if params.logical_volume_length == 0 {
-        return Err(Error::LogicalVolumeModuloIsZero);
+        return Err(Errors::LogicalVolumeModuloIsZero);
     }
     if MAX_LOGICAL_VOLUMES < (params.logical_volume_base + params.logical_volume_length) {
-        return Err(Error::ExceededAvailableLogicalVolumes);
+        return Err(Errors::ExceededAvailableLogicalVolumes);
     }
 
     Ok(())
@@ -120,7 +120,7 @@ fn compose_from_params_and_state(
     params: &Params,
     state: &mut State,
     duration_ms: u64,
-) -> Result<u64, Error> {
+) -> Result<u64, Errors> {
     match duration_ms > state.duration_ms {
         true => modify_state_time_changed(state, params.logical_volume_length, duration_ms),
         _ => {
@@ -148,7 +148,7 @@ fn modify_state_time_changed(state: &mut State, logical_volume_length: u64, dura
 fn modify_state_time_did_not_change(
     state: &mut State,
     logical_volume_length: u64,
-) -> Result<(), Error> {
+) -> Result<(), Errors> {
     state.sequence += 1;
     if state.sequence < MAX_SEQUENCES {
         return Ok(());
@@ -162,7 +162,7 @@ fn modify_state_time_did_not_change(
     }
 
     // cycled through all sequences on all available logical shards
-    Err(Error::ExceededAvailableSequences)
+    Err(Errors::ExceededAvailableSequences)
 }
 
 pub fn compose(ms_timestamp: u64, logical_volume: u64, ticket_id: u64) -> u64 {
