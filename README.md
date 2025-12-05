@@ -39,6 +39,7 @@ let mut snowprints = match Snowprints::from(params) {
     Err(e) => return println!("{}", e),
 };
 
+// create a unique id
 let snowflake_id = match snowprints.create_id() {
     Ok(sp) => sp,
     Err(e) => return println!("{}", e),
@@ -47,12 +48,9 @@ let snowflake_id = match snowprints.create_id() {
 // get the current timestamp
 let timestamp = snowprints.get_timestamp();
 
-// get a left shifted timestamp;
+// get a shifted timestamp (for searching / indexing);
 let offset_ms = 5;
 let bit_shifted_timestamp = snowprints.get_bit_shifted_timestamp(offset_ms);
-
-// decompose 
-let (timestamp_ms, logical_volume, sequence) = decompose(snowprint);
 ```
 
 ### Decompose
