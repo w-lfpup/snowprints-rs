@@ -1,11 +1,5 @@
-// Distribute ids across logical volume shards evenly
-//     - reset sequence every MS to 0 to remain sortable
-//     - increase logical volume sequence by 1 every MS
-//     - return err if available logical volume ids have been used
-
-// The above assumes sequences + logical volume ids occur in the same millisecond
-// https://instagram-engineering.com/sharding-ids-at-instagram-1cf5a71e5a5c
-
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 const LOGICAL_VOLUME_BIT_LEN: u64 = 13;
@@ -23,6 +17,7 @@ pub enum Errors {
     LogicalVolumeModuloIsZero,
 }
 
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Params {
     pub logical_volume_base: u64,
