@@ -57,7 +57,7 @@ let snowflake_id = match snowprints.create_id() {
 // get the current timestamp
 let timestamp = snowprints.get_timestamp();
 
-// get a shifted timestamp for search index paginate DB entries
+// get a shifted timestamp to search / index / paginate DB entries
 let offset_ms = 5;
 let bit_shifted_timestamp = snowprints.get_bit_shifted_timestamp(offset_ms);
 ```
