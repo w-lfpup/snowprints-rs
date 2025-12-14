@@ -2,6 +2,8 @@
 
 Distribute snowflake ids across available logical volumes.
 
+[![Tests](https://github.com/w-lfpup/snowprints-rs/actions/workflows/tests.yml/badge.svg)](https://github.com/w-lfpup/snowprints-rs/actions/workflows/tests.yml)
+
 ## How to use
 
 ### Install
