@@ -21,4 +21,3 @@ jobs:
       run: cargo build --features serde
     - name: Run tests [serde]
       run: cargo test --features serde
-
