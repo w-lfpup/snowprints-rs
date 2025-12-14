@@ -1,10 +1,3 @@
-// Distribute ids across logical volume shards evenly
-//     - reset sequence every MS to 0 to remain sortable
-//     - increase logical volume sequence by 1 every MS
-//     - return err if available logical volume ids have been used
-
-// The above assumes sequences + logical volume ids occur in the same millisecond
-// https://instagram-engineering.com/sharding-ids-at-instagram-1cf5a71e5a5c
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};

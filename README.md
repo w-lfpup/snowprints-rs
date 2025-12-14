@@ -1,6 +1,6 @@
 # Snowprints-rs
 
-Create and distribute snowflake ids across logical volumes.
+Distribute snowflake ids across available logical volumes.
 
 ## How to use
 
@@ -74,9 +74,12 @@ let (timestamp_ms, logical_volume, sequence) = decompose(snowprint);
 
 ## What is a snowprint?
 
-A `snowprint` is a [snowflake id](https://en.wikipedia.org/wiki/Snowflake_ID) variant based on this [article](https://instagram-engineering.com/sharding-ids-at-instagram-1cf5a71e5a5c).
+A `snowprint` is a [snowflake id](https://en.wikipedia.org/wiki/Snowflake_ID) variant based on this [article](https://instagram-engineering.com/sharding-ids-at-instagram-1cf5a71e5a5c) and optimistically distributes a "sequential trail" of snowflake IDs across shardable real estate.
 
-This library optimistically distributes a "sequential trail" of snowflake IDs across shardable real estate.
+Snowprints :
+- reset sequences every MS to 0
+- increase logical volume sequences on use or every MS
+- return err if available logical volume ids are exhausted
 
 ## License
 
